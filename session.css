@@ -1,0 +1,19 @@
+html,body {
+	height:100%
+}
+
+
+#mod-scollaboration-session div#chatlist{
+ padding: 3px;
+ margin: 3px;
+ height: 150px;
+ overflow: auto;
+}
+    
+#mod-scollaboration-session div#chattextarea input{
+ border-style: solid;
+ width: 90%;
+ border-color: #D4D0C8;
+ margin: 5px;
+}
+
