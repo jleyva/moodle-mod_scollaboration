@@ -1,0 +1,13 @@
+Version 1
+=========
+User menu, posibility of grant permissions
+Notifications
+Notes
+Delete "Actions"
+Delete polls buttoms
+Complete configuration form
+Menu, displays only Session
+IE Whiteboard, zoom capabilities
+
+Version 2
+=========
