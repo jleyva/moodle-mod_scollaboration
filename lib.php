@@ -260,5 +260,13 @@ function scollaboration_sessionid($scollaboration, $groupid){
     }
 }
 
+function scollaboration_json_error($errormessage, $langfile = true){
+    if($langfile)
+        $errormessage = get_string($errormessage,'mod_scollaboration');
+      
+    header('Content-type: application/json');
+    echo json_encode(array('status'=>'failure','msg'=>$errormessage));
+    die;
+}
 
 ?>

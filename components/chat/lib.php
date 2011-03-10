@@ -10,7 +10,7 @@
 
 require_once(dirname(dirname(dirname(dirname(dirname(__FILE__))))).'/config.php');
 
-function scollaboration_chat_get_actions($session,$user){
+function scollaboration_chat_get_actions($session,$scollaboration,$user){
     global $USER, $CFG;
     
     $lastchatid = optional_param('lastmessageid',0,PARAM_INT);
@@ -30,7 +30,7 @@ function scollaboration_chat_get_actions($session,$user){
     return array('messages'=>$response);
 }
 
-function scollaboration_chat_process_request($session,$user){
+function scollaboration_chat_process_request($session,$scollaboration,$user){
     global $USER;
 
     if($user->canchat){

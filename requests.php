@@ -17,26 +17,26 @@ require_once(dirname(__FILE__).'/lib.php');
 
 $id = required_param('id', PARAM_INT); // session ID
 
+if(!confirm_sesskey())
+    scollaboration_json_error('Invalid sesskey',false);
+
 if (! $session = get_record('scollaboration_sessions', 'id', $id)) {
-    error('Session ID was incorrect');
+    scollaboration_json_error('Session ID was incorrect',false);
 }
 
 // A session is completed when a moderator uses the Session -> Terminate link
 if($session->completed){
-    error('Session completed');
+    scollaboration_json_error('Session completed',false);
 }
-
-if(!confirm_sesskey())
-    error('Invalid sesskey');
 
 if (! $scollaboration = get_record('scollaboration', 'id', $session->scid)) {
-    error('Collaboration ID was incorrect');
+    scollaboration_json_error('Collaboration ID was incorrect',false);
 }
 if (! $course = get_record('course', 'id', $scollaboration->course)) {
-    error('Course is misconfigured');
+    scollaboration_json_error('Course is misconfigured',false);
 }
 if (! $cm = get_coursemodule_from_instance('scollaboration', $scollaboration->id, $course->id)) {
-    error('Course Module ID was incorrect');
+    scollaboration_json_error('Course Module ID was incorrect',false);
 }
 
 require_course_login($course, true, $cm);
@@ -68,19 +68,29 @@ if(!$user){
     $user->lastping = time();
     $user->timejoined = time();
     //TODO - Do something, display an error...
-    if(!$user->id = insert_record('scollaboration_session_users',$user))
-        die;
+    if(!$user->id = insert_record('scollaboration_session_users',$user)){
+        scollaboration_json_error('Problem connecting to database',false);
+    }
+    else{
+        $action = new stdclass;
+        $action->sid = $id;
+        $action->component = 'notifications';
+        $action->action = 'msg';
+        // TODO add name
+        $action->data = get_string('hasjoinedthechat','mod_scollaboration');
+        $action->timestamp = time();
+        insert_record('scollaboration_actions',$action);
+    }
 }
 
 if($user->banned){
-    header('Content-type: application/json');
-    echo json_encode(array('failure'=>get_string('userbanned','mod_scollaboration')));
+    scollaboration_json_error('userbanned');
 }
 
-$actions = optional_param('actions',false,PARAM_BOOL);
+$actionsid = optional_param('actions',false,PARAM_BOOL);
 $component = optional_param('component','',PARAM_ALPHA);
 
-if($actions){
+if($actionsid){
     $actions = array();
     $plugins = get_list_of_plugins('components','',$CFG->dirroot.'/mod/scollaboration');
     
@@ -90,14 +100,23 @@ if($actions){
             require_once($libfile);
             $function = 'scollaboration_'.$p.'_get_actions';
             if(function_exists($function)){
-                $actions[$p] = $function($session,$user);
+                $actions[$p] = $function($session,$scollaboration,$user);
             }
         }
     }
-    if(function_exists('json_encode')){
-        header('Content-type: application/json');
-        echo json_encode($actions);
-    }
+    
+    // Get logged actions
+    $sql = "sid = {$id} AND id > {$actionsid} ORDER BY id ASC";
+    if($loggedactions = get_records_select('scollaboration_actions',$sql)){
+        foreach($loggedactions as $a){
+            $actions[$a->component]['actions'][] = $a;
+        }
+    }    
+    
+    header('Content-type: application/json');
+    echo json_encode($actions);
+    die;
+
 }
 
 if($component){ 
@@ -106,7 +125,7 @@ if($component){
         require_once($libfile);
         $function = 'scollaboration_'.$component.'_process_request';
         if(function_exists($function))
-            $function($session,$user);
+            $function($session,$scollaboration,$user);
         die;
     }
 }

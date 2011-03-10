@@ -51,6 +51,13 @@ $moderator = has_capability('mod/scollaboration:moderate',$context);
 
 add_to_log($course->id, "scollaboration", "view", "session.php?id=$cm->id", "$scollaboration->id");
 
+// We need to detect the IE version for the whiteboard
+$obsoleteie = false;
+
+if(preg_match('/MSIE/i',$_SERVER['HTTP_USER_AGENT']) && ! preg_match('/MSIE 9/i',$_SERVER['HTTP_USER_AGENT'])){
+    $obsoleteie = true;
+}    
+
 // As the plugin chat does, we dont use print_header or print_header simple (neither print_footer)
 // To avoid problems with Moodle's CSS and javascript we only load YUI css and js files
 
@@ -89,6 +96,11 @@ body {
 <?php
 foreach($yuicssfiles as $f)
     echo '<link rel="stylesheet" type="text/css" href="'.$CFG->wwwroot.'/lib/yui/'.$f.'.css" />';
+    
+if($obsoleteie){
+    echo '<link rel="stylesheet" type="text/css" href="'.$CFG->wwwroot.'/mod/scollaboration/components/whiteboard/interfaces/default/style.css" />';
+    echo '<script type="text/javascript" src="'.$CFG->wwwroot.'/mod/scollaboration/components/whiteboard/excanvas.js"></script>';
+}
 ?>
 
 <?php
@@ -105,17 +117,24 @@ foreach($yuijsfiles as $f)
         SESSION_ID : '<?php echo $id;?>',
         SESSKEY : '<?php echo $USER->sesskey;?>',
         AJAX_POLLING_INT : '2000',
-        MODERATOR : <?php echo ($moderator)? 'true': 'false';?>
+        FULLCANVAS_UPDATE: 60000,
+        LAYOUT: 'left',
+        MODERATOR : <?php echo ($moderator)? 'true': 'false';?>,
+        OBSOLETE_IE: <?php echo ($obsoleteie)? 'true': 'false';?>
     };
     
 --></script>
 
-<!-- TODO: This should be an iteration-->
-<script type="text/javascript" src="<?php echo $CFG->wwwroot; ?>/mod/scollaboration/components/resources/functions.js"></script>
-<script type="text/javascript" src="<?php echo $CFG->wwwroot; ?>/mod/scollaboration/components/whiteboard/functions.js"></script>
-<script type="text/javascript" src="<?php echo $CFG->wwwroot; ?>/mod/scollaboration/components/chat/functions.js"></script>
+<?php
+    $plugins = get_list_of_plugins('components','',$CFG->dirroot.'/mod/scollaboration');
+    foreach($plugins as $p){
+        $jsfile = "/mod/scollaboration/components/$p/functions.js";
+        if(file_exists($CFG->dirroot.$jsfile)){
+            echo '<script type="text/javascript" src="'.$CFG->wwwroot.$jsfile.'"></script>';
+        }
+    }
+?>
 <script type="text/javascript" src="<?php echo $CFG->wwwroot; ?>/mod/scollaboration/components/whiteboard/paintweb.js"></script>
-<script type="text/javascript" src="<?php echo $CFG->wwwroot; ?>/mod/scollaboration/components/session/functions.js"></script>
 <script type="text/javascript" src="<?php echo $CFG->wwwroot; ?>/mod/scollaboration/scollaboration.js"></script>
 
 <script type="text/javascript" src="<?php echo $CFG->wwwroot; ?>/mod/scollaboration/components/session/functions.ajax.js"></script>
@@ -132,6 +151,24 @@ foreach($yuijsfiles as $f)
 </div>
 
 <div id="userlistlayer">
+    <div id="useroptions">
+        <div id="useractions">
+            <!-- menu buttom -->
+            <input type="submit" id="menubuttonua" name="menubuttonua_name" value="Actions">
+            <select id="menubuttonuaselect" name="menubuttonuaselect">
+                <option value="0">Raise Hand</option>
+                <option value="1">Status: Away</option>
+                <option value="2">Status: :)</option>
+                <option value="3">Status: :(</option>
+                <option value="4">Status: :S</option>
+            </select>
+        
+        </div>
+        <div id="userpollbuttom">
+            <input type="button" id="userpollok" name="pollok" value=""> 
+            <input type="button" id="userpollnot" name="pollnot" value=""> 
+        </div>
+    </div>
     <div id="userstable">
     </div>
 </div>
@@ -143,12 +180,30 @@ foreach($yuijsfiles as $f)
         <div id="chattextarea">
         <input type="text" id="chattextid" name="chattext">
         </div>
+        <div id="chatsend">
+            <input type="button" id="chatsendb" name="chatsendb" value="Send"> 
+        </div>
     </div>
+</div>
+
+<div id="tooltabslayer" class="yui-navset">
+
 </div>
 
 <div id="whiteboardlayer"> 
             <!-- Whiteboard area -->
-            <div id="PaintWebTarget"></div>
+<?php
+    if($obsoleteie){
+        include_once('obsoletewb.html');
+    }
+    else{
+?>    
+            <div id="PaintWebTarget"> 
+            
+            </div>
+<?php
+    }
+?>            
             <!--<img id="editableImage" src="components/whiteboard/freshalicious.jpg" alt="Freshalicious">-->
             <img id="editableImage" src="components/whiteboard/defaultimage.php" alt="Freshalicious">           
 </div> 

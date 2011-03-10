@@ -5,7 +5,7 @@ SC.components.chat.lastMessageId = 0;
 // Actions is a JSON decoded object
 SC.components.chat.processActions = function(actions){
     // JSON 
-    // { messages: [{sender: 'username', message: 'text', id: N},..],
+    // { messages: [{sender: 'username', message: 'text', id: N},..], actions: [..]..
     //   }
     
     if (!YAHOO.lang.isUndefined(actions.messages)){
@@ -53,6 +53,9 @@ SC.components.chat.initLayout = function(){
             SC.components.chat.sendChatMessage();
 	};
 	YAHOO.util.Event.on('chattextid', 'keypress', fnCallbackChattext);
+    
+    var oChatSendButton = new YAHOO.widget.Button("chatsendb", { onclick: { fn: SC.components.chat.sendChatMessage } });
+    YAHOO.util.Dom.setStyle('chattextid','height',YAHOO.util.Dom.getStyle('chatsendb','height'));
     
     // Focus on chat input text element
     YAHOO.util.Dom.get('chattextid').focus();

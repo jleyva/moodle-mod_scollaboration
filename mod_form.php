@@ -76,6 +76,8 @@ class mod_scollaboration_mod_form extends moodleform_mod {
         $mform->addElement('selectyesno', 'studentlogs', get_string('studentseereports', 'scollaboration'));
 
         // TODO - Default values for chat, speak, whiteboard, etc....
+        // TODO - Default layout
+        // TODO - Username format
         
         $features = new stdClass;
         $features->groups = true;

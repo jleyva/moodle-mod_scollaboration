@@ -1,11 +1,18 @@
-// Namespace for Notifications
-Namespace('SC.notifications');
+Namespace('SC.components.notifications');
 
-SC.notifications.lastId = 0;
+    
+SC.components.notifications.getTab = function(moderator){
 
-// Function to add messages to the notifications Area
-// If recording, we must save in the server via AJAX the notification (if it's public, not private)
-
-SC.components.resources.initLayout = function(){
+    
+    var tab = new YAHOO.widget.Tab({
+        label: 'Notif.',
+        content: '<div id="notificationstab"></div>',
+        active: true
+    });
+    
+    return {'index': 10, 'tab': tab};
+};    
+    
+SC.components.notifications.initLayout = function(){
     return false;
-}
+};

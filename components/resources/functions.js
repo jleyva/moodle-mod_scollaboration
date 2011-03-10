@@ -1,11 +1,5 @@
 Namespace('SC.components.resources');
 
-SC.components.resources.lastId = 0;
-
-SC.components.resources.test = function(){ 
-    alert('a'); 
-    };
-
     
 SC.components.resources.getMenuItems = function(moderator){
 
@@ -15,13 +9,24 @@ SC.components.resources.getMenuItems = function(moderator){
         submenu: {  
             id: "documentsmenu", 
             itemdata: [
-                { text: "Leave session", helptext: "", onclick: { fn: SC.components.session.hideLoadingWindow }}
+                { text: "Upload", helptext: "", onclick: { fn: SC.components.session.hideLoadingWindow }}
             ]
         }
         };
     
-    return {'index': 20, 'items': items};
+    return {'index': 50, 'items': items};
 };    
+
+SC.components.resources.getTab = function(moderator){
+
+    var tab = new YAHOO.widget.Tab({
+        label: 'Docs',
+        content: '<div id="docstab"></div>',
+        active: false
+    });
+    
+    return {'index': 40, 'tab': tab};
+};
     
 SC.components.resources.initLayout = function(){
     return false;

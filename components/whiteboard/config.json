@@ -626,10 +626,6 @@
    */
   "keys": {
     // Use "command": "id" to execute some command.
-    "Control Z": { "command": "historyUndo" },
-    "Control Y": { "command": "historyRedo" },
-
-    "Control N": { "command": "imageClear" },
     "Control S": { "command": "imageSave" },
 
     "Control A":    { "command": "selectAll" },

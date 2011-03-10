@@ -48,6 +48,8 @@ $context = get_context_instance(CONTEXT_MODULE, $cm->id);
 
 add_to_log($course->id, "scollaboration", "view", "view.php?id=$cm->id", "$scollaboration->id");
 
+// TODO Check for json library
+
 /// Print the page header
 $strscollaborations = get_string('modulenameplural', 'scollaboration');
 $strscollaboration  = get_string('modulename', 'scollaboration');

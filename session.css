@@ -2,18 +2,52 @@ html,body {
 	height:100%
 }
 
+#mod-scollaboration-session div#userstable{
+clear: both;
+padding: 2px;
+padding-top: 4px;
+}
+
+.yui-button#userpollok button {
+    padding-left: 2em;
+    background: url(../../pix/i/tick_green_big.gif) 30% 50% no-repeat;
+}
+
+.yui-button#userpollnot button {
+    padding-left: 2em;
+    background: url(../../pix/i/cross_red_big.gif) 30% 50% no-repeat;
+}
+
+#mod-scollaboration-session div#useroptions{
+ clear: both;
+ margin: 2px;
+ padding: 2px; 
+}
+
+#mod-scollaboration-session div#useractions{
+ float: left;
+}
+
+#mod-scollaboration-session div#userpollbuttom{
+ float: right;
+}
 
 #mod-scollaboration-session div#chatlist{
  padding: 3px;
  margin: 3px;
- height: 150px;
+ height: 100px;
  overflow: auto;
+}
+
+#mod-scollaboration-session div#chattextarea {
+ float: left;
+ width: 70%; 
 }
     
 #mod-scollaboration-session div#chattextarea input{
  border-style: solid;
- width: 90%;
+ width: 98%;
  border-color: #D4D0C8;
- margin: 5px;
+ margin-left: 5px;
 }
 
