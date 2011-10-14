@@ -1,28 +1,21 @@
-<?php //$Id: mod_form.php,v 1.2.2.3 2009/03/19 12:23:11 mudrd8mz Exp $
+<?php 
 
-/**
- * This file defines the main scollaboration configuration form
- * It uses the standard core Moodle (>1.8) formslib. For
- * more info about them, please visit:
- *
- * http://docs.moodle.org/en/Development:lib/formslib.php
- *
- * The form must provide support for, at least these fields:
- *   - name: text element of 64cc max
- *
- * Also, it's usual to use these fields:
- *   - intro: one htmlarea element to describe the activity
- *            (will be showed in the list of activities of
- *             scollaboration type (index.php) and in the header
- *             of the scollaboration main page (view.php).
- *   - introformat: The format used to write the contents
- *             of the intro field. It automatically defaults
- *             to HTML when the htmleditor is used and can be
- *             manually selected if the htmleditor is not used
- *             (standard formats are: MOODLE, HTML, PLAIN, MARKDOWN)
- *             See lib/weblib.php Constants and the format_text()
- *             function for more info
- */
+// This file is part of Moodle - http://moodle.org/
+//
+// Moodle is free software: you can redistribute it and/or modify
+// it under the terms of the GNU General Public License as published by
+// the Free Software Foundation, either version 3 of the License, or
+// (at your option) any later version.
+//
+// Moodle is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+// GNU General Public License for more details.
+//
+// You should have received a copy of the GNU General Public License
+// along with Moodle.  If not, see <http://www.gnu.org/licenses/>.
+
+defined('MOODLE_INTERNAL') || die();
 
 require_once($CFG->dirroot.'/course/moodleform_mod.php');
 
@@ -30,7 +23,7 @@ class mod_scollaboration_mod_form extends moodleform_mod {
 
     function definition() {
 
-        global $COURSE;
+        global $DB, $COURSE;
         $mform =& $this->_form;
 
 //-------------------------------------------------------------------------------
@@ -46,20 +39,19 @@ class mod_scollaboration_mod_form extends moodleform_mod {
     /// Adding the required "intro" field to hold the description of the instance
         $mform->addElement('htmleditor', 'intro', get_string('scollaborationintro', 'scollaboration'));
         $mform->setType('intro', PARAM_RAW);
-        $mform->addRule('intro', get_string('required'), 'required', null, 'client');
-        $mform->setHelpButton('intro', array('writing', 'richtext'), false, 'editorhelpbutton');
+        $mform->addRule('intro', get_string('required'), 'required', null, 'client');        
 
         $mform->addElement('date_time_selector', 'scollaborationtime', get_string('scollaborationtime', 'scollaboration'));
 
         $options=array();
-        $options[1]  = get_string('repeatnone', 'scollaboration');
-        $options[2]  = get_string('repeatdaily', 'scollaboration');
-        $options[3]  = get_string('repeatweekly', 'scollaboration');
-        $mform->addElement('select', 'schedule', get_string('repeattimes', 'scollaboration'), $options);
+        $options[1]  = get_string('repeatnone', 'chat');
+        $options[2]  = get_string('repeatdaily', 'chat');
+        $options[3]  = get_string('repeatweekly', 'chat');
+        $mform->addElement('select', 'schedule', get_string('repeattimes', 'chat'), $options);
 
 
         $options=array();
-        $options[0]    = get_string('neverdeletemessages', 'scollaboration');
+        $options[0]    = get_string('neverdeletemessages', 'chat');
         $options[365]  = get_string('numdays', '', 365);
         $options[180]  = get_string('numdays', '', 180);
         $options[150]  = get_string('numdays', '', 150);
@@ -97,5 +89,3 @@ class mod_scollaboration_mod_form extends moodleform_mod {
 
     }
 }
-
-?>

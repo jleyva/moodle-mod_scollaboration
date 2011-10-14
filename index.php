@@ -15,28 +15,29 @@ require_once(dirname(__FILE__).'/lib.php');
 
 $id = required_param('id', PARAM_INT);   // course
 
-if (! $course = get_record('course', 'id', $id)) {
-    error('Course ID is incorrect');
+$PAGE->set_url('/mod/scollaboration/index.php', array('id'=>$id));
+
+if (! $course = $DB->get_record('course',array( 'id' =>  $id))) {
+    print_error('invalidcourseid', 'error');
 }
 
-require_course_login($course);
+require_login($course);
+$PAGE->set_pagelayout('incourse');
+
 
 add_to_log($course->id, 'scollaboration', 'view all', "index.php?id=$course->id", '');
-
 
 /// Get all required stringsscollaboration
 
 $strscollaborations = get_string('modulenameplural', 'scollaboration');
 $strscollaboration  = get_string('modulename', 'scollaboration');
 
-
 /// Print the header
+$PAGE->navbar->add($strscollaborations);
+$PAGE->set_title("$course->shortname: $strscollaborations");
+$PAGE->set_heading($course->fullname);
+echo $OUTPUT->header();
 
-$navlinks = array();
-$navlinks[] = array('name' => $strscollaborations, 'link' => '', 'type' => 'activity');
-$navigation = build_navigation($navlinks);
-
-print_header_simple($strscollaborations, '', $navigation, '', '', true, '', navmenu($course));
 
 /// Get all the appropriate data
 
@@ -51,6 +52,8 @@ $timenow  = time();
 $strname  = get_string('name');
 $strweek  = get_string('week');
 $strtopic = get_string('topic');
+
+$table = new html_table();
 
 if ($course->format == 'weeks') {
     $table->head  = array ($strweek, $strname);
@@ -79,11 +82,6 @@ foreach ($scollaborations as $scollaboration) {
     }
 }
 
-print_heading($strscollaborations);
-print_table($table);
+echo $OUTPUT->header();echo html_writer::table($table);
+echo $OUTPUT->footer();
 
-/// Finish the page
-
-print_footer($course);
-
-?>

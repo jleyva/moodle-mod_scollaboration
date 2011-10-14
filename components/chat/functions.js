@@ -8,11 +8,12 @@ SC.components.chat.processActions = function(actions){
     // { messages: [{sender: 'username', message: 'text', id: N},..], actions: [..]..
     //   }
     
-    if (!YAHOO.lang.isUndefined(actions.messages)){
+    if (!SC.utils.isUndefined(actions.messages)){
         for(var msg in actions.messages){            
-            SC.components.chat.appendMessage(actions.messages[msg]);            
-             if(actions.messages[msg].id > SC.components.chat.lastMessageId){
-                SC.components.chat.lastMessageId = actions.messages[msg].id;
+            SC.components.chat.appendMessage(actions.messages[msg]);	    
+            
+	    if(parseInt(actions.messages[msg].id) > SC.components.chat.lastMessageId){                
+		SC.components.chat.lastMessageId = parseInt(actions.messages[msg].id);		
             }
         }
         SC.components.chat.messagesLayerParent.scrollTop = SC.components.chat.messagesLayerParent.scrollHeight;
@@ -63,3 +64,11 @@ SC.components.chat.initLayout = function(){
     SC.components.chat.messagesLayerParent = SC.components.chat.messagesLayer;
     //SC.components.chat.messagesLayerParent = YAHOO.util.Dom.getAncestorByTagName(SC.components.chat.messagesLayer,'div');
 };
+
+SC.components.chat.changePermissions = function(el){
+    if(SCMoodle.MODERATOR){
+        var canchat = (el.className == 'canchat')? 0: 1;
+        var userid = el.id.replace('cpermissu','');
+        SC.components.chat.net.changePermissions(userid, canchat);
+    }
+}

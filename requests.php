@@ -20,7 +20,7 @@ $id = required_param('id', PARAM_INT); // session ID
 if(!confirm_sesskey())
     scollaboration_json_error('Invalid sesskey',false);
 
-if (! $session = get_record('scollaboration_sessions', 'id', $id)) {
+if (! $session = $DB->get_record('scollaboration_sessions',array('id' =>  $id))) {
     scollaboration_json_error('Session ID was incorrect',false);
 }
 
@@ -29,10 +29,10 @@ if($session->completed){
     scollaboration_json_error('Session completed',false);
 }
 
-if (! $scollaboration = get_record('scollaboration', 'id', $session->scid)) {
+if (! $scollaboration = $DB->get_record('scollaboration',array('id' =>  $session->scid))) {
     scollaboration_json_error('Collaboration ID was incorrect',false);
 }
-if (! $course = get_record('course', 'id', $scollaboration->course)) {
+if (! $course = $DB->get_record('course',array('id' =>  $scollaboration->course))) {
     scollaboration_json_error('Course is misconfigured',false);
 }
 if (! $cm = get_coursemodule_from_instance('scollaboration', $scollaboration->id, $course->id)) {
@@ -42,20 +42,22 @@ if (! $cm = get_coursemodule_from_instance('scollaboration', $scollaboration->id
 require_course_login($course, true, $cm);
 
 $context = get_context_instance(CONTEXT_MODULE, $cm->id);
-require_capability('mod/scollaboration:collaborate',$context);
-
+if(! has_capability('mod/scollaboration:collaborate',$context)){
+    scollaboration_json_error('No permissions',false);
+}
 
 $groupid = $session->groupid;
 
 if($groupid && ! groups_is_member($groupid)){
-    error('User is not member of the group selected');
+    scollaboration_json_error('User is not member of the group selected');
 }
 
 // Register user
-$user = get_record('scollaboration_session_users','sid',$id,'userid',$USER->id);
+$user = $DB->get_record('scollaboration_session_users',array('sid' => $id,'userid' => $USER->id));
+$moderator = has_capability('mod/scollaboration:moderate',$context);
+
 if(!$user){
-    $moderator = has_capability('mod/scollaboration:moderate',$context);
-    
+        
     $user = new stdclass;
     $user->sid = $id;
     $user->userid = $USER->id;
@@ -68,7 +70,8 @@ if(!$user){
     $user->lastping = time();
     $user->timejoined = time();
     //TODO - Do something, display an error...
-    if(!$user->id = insert_record('scollaboration_session_users',$user)){
+    
+    if(!$user->id = $DB->insert_record('scollaboration_session_users',$user)){
         scollaboration_json_error('Problem connecting to database',false);
     }
     else{
@@ -77,15 +80,35 @@ if(!$user){
         $action->component = 'notifications';
         $action->action = 'msg';
         // TODO add name
-        $action->data = get_string('hasjoinedthechat','mod_scollaboration');
+        $action->data = scollaboration_user_nick($scollaboration->usernameformat).' '.get_string('hasjoinedthechat','mod_scollaboration');
         $action->timestamp = time();
-        insert_record('scollaboration_actions',$action);
+        $DB->insert_record('scollaboration_actions',$action);
     }
 }
 
 if($user->banned){
     scollaboration_json_error('userbanned');
 }
+
+$timenow = time();
+
+// TODO - Add a constant for time
+if($timenow - $user->lastping > 60){
+    $action = new stdclass;
+    $action->sid = $id;
+    $action->component = 'notifications';
+    $action->action = 'msg';
+    // TODO add name
+    $action->data = scollaboration_user_nick($scollaboration->usernameformat).' '.get_string('hasrejoinedthechat','mod_scollaboration');
+    $action->timestamp = $timenow;
+    $DB->insert_record('scollaboration_actions',$action);
+}
+
+$user->lastping = $timenow;
+$DB->update_record('scollaboration_session_users',$user);
+
+$user->moderator = $moderator;
+
 
 $actionsid = optional_param('actions',false,PARAM_BOOL);
 $component = optional_param('component','',PARAM_ALPHA);
@@ -106,8 +129,8 @@ if($actionsid){
     }
     
     // Get logged actions
-    $sql = "sid = {$id} AND id > {$actionsid} ORDER BY id ASC";
-    if($loggedactions = get_records_select('scollaboration_actions',$sql)){
+    $sql = "sid = ? AND id > ? ORDER BY id ASC";
+    if($loggedactions = $DB->get_records_select('scollaboration_actions',$sql,array($id,$actionsid))){
         foreach($loggedactions as $a){
             $actions[$a->component]['actions'][] = $a;
         }
@@ -129,5 +152,3 @@ if($component){
         die;
     }
 }
-
-?>

@@ -1,5 +1,20 @@
 <?php
 
+// This file is part of Moodle - http://moodle.org/
+//
+// Moodle is free software: you can redistribute it and/or modify
+// it under the terms of the GNU General Public License as published by
+// the Free Software Foundation, either version 3 of the License, or
+// (at your option) any later version.
+//
+// Moodle is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+// GNU General Public License for more details.
+//
+// You should have received a copy of the GNU General Public License
+// along with Moodle.  If not, see <http://www.gnu.org/licenses/>.
+
 /**
  * Lib file for component
  *
@@ -11,7 +26,7 @@
 require_once(dirname(dirname(dirname(dirname(dirname(__FILE__))))).'/config.php');
 
 function scollaboration_whiteboard_get_actions($session,$scollaboration,$user){
-    global $USER, $CFG;    
+    global $DB, $USER, $CFG;    
     
     $lastdrawid = optional_param('lastdrawingid',0,PARAM_INT);
     
@@ -19,14 +34,14 @@ function scollaboration_whiteboard_get_actions($session,$scollaboration,$user){
     // Full canvas is sent by the moderator every XX seconds
     // TODO, index or way to optimize query for imgdata
     if($lastdrawid == 0){
-        if($maxid = get_record_sql("SELECT MAX(id) as id FROM {$CFG->prefix}scollaboration_whiteboard WHERE sid = {$session->id} AND fullcanvas = 1")){
+        if($maxid = $DB->get_record_sql("SELECT MAX(id) as id FROM {scollaboration_whiteboard} WHERE sid = ? AND fullcanvas = ?",array($session->id,1))){
             $lastdrawid = $maxid->id - 1;
         }
     }
     
     $response = array();
-    $sql = "sid = {$session->id} AND id > {$lastdrawid} ORDER BY id ASC";
-    $drawings = get_records_select('scollaboration_whiteboard',$sql);
+    $sql = "sid = ? AND id > ? ORDER BY id ASC";
+    $drawings = $DB->get_records_select('scollaboration_whiteboard',$sql,array($session->id,$lastdrawid));
     if($drawings){
         $timenow = time();
         foreach($drawings as $d){
@@ -46,7 +61,7 @@ function scollaboration_whiteboard_get_actions($session,$scollaboration,$user){
 }
 
 function scollaboration_whiteboard_process_request($session,$scollaboration,$user){
-    global $USER;
+    global $DB, $USER;
 
     $png = optional_param('png',0,PARAM_RAW);
     $imageid = optional_param('imageid',0,PARAM_INT);
@@ -63,7 +78,7 @@ function scollaboration_whiteboard_process_request($session,$scollaboration,$use
             $drawing->fullcanvas = 2;
             $drawing->timestamp = time();
                 
-            if($drawid = insert_record('scollaboration_whiteboard',$drawing)){
+            if($drawid = $DB->insert_record('scollaboration_whiteboard',$drawing)){
                 echo json_encode(array('drawid'=>$drawid));
                 exit;
             }  
@@ -76,10 +91,10 @@ function scollaboration_whiteboard_process_request($session,$scollaboration,$use
                 $mimetype   = $matches[1];
                 $base64data = $matches[2];
                 
-                if($drawing = get_record('scollaboration_whiteboard','id',$fullcanvas,'fullcanvas',2)){
+                if($drawing = $DB->get_record('scollaboration_whiteboard',array('id' => $fullcanvas,'fullcanvas' => 2))){
                     $drawing->fullcanvas = 1;
                     $drawing->imgdata = $base64data;                  
-                    if(update_record('scollaboration_whiteboard',$drawing)){
+                    if($DB->update_record('scollaboration_whiteboard',$drawing)){
                         $png = false;
                         echo json_encode(array('response'=>'success'));
                         exit;
@@ -105,7 +120,7 @@ function scollaboration_whiteboard_process_request($session,$scollaboration,$use
                 $drawing->fullcanvas = 0;
                 $drawing->timestamp = time();
                 
-                if(insert_record('scollaboration_whiteboard',$drawing)){
+                if($DB->insert_record('scollaboration_whiteboard',$drawing)){
                     header('Content-type: application/json');
                     echo json_encode(array('response'=>'success'));
                     exit;
@@ -117,7 +132,7 @@ function scollaboration_whiteboard_process_request($session,$scollaboration,$use
     }
     
     if($imageid){
-        if($drawing = get_record('scollaboration_whiteboard','id',$imageid,'sid',$session->id)){
+        if($drawing = $DB->get_record('scollaboration_whiteboard',array('id' => $imageid,'sid' => $session->id))){
             $imgdata = base64_decode($drawing->imgdata);        
             header('Cache-Control: private, must-revalidate, pre-check=0, post-check=0, max-age=0');
             header('Expires: '. gmdate('D, d M Y H:i:s', 0) .' GMT');
@@ -133,5 +148,3 @@ function scollaboration_whiteboard_process_request($session,$scollaboration,$use
     
 }
 
-
-?>

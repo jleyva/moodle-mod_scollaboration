@@ -4,7 +4,7 @@
 //
 
 
-$mod_scollaboration_capabilities = array(
+$capabilities = array(
 
     'mod/scollaboration:collaborate' => array(
 
@@ -16,7 +16,7 @@ $mod_scollaboration_capabilities = array(
             'student' => CAP_ALLOW,
             'teacher' => CAP_ALLOW,
             'editingteacher' => CAP_ALLOW,
-            'admin' => CAP_ALLOW
+            'manager' => CAP_ALLOW
         )
     ),
     'mod/scollaboration:moderate' => array(
@@ -29,7 +29,7 @@ $mod_scollaboration_capabilities = array(
             'student' => CAP_PREVENT,
             'teacher' => CAP_PREVENT,
             'editingteacher' => CAP_ALLOW,
-            'admin' => CAP_ALLOW
+            'manager' => CAP_ALLOW
         )
     ),
 );

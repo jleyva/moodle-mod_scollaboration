@@ -1,5 +1,21 @@
 <?php
 
+// This file is part of Moodle - http://moodle.org/
+//
+// Moodle is free software: you can redistribute it and/or modify
+// it under the terms of the GNU General Public License as published by
+// the Free Software Foundation, either version 3 of the License, or
+// (at your option) any later version.
+//
+// Moodle is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+// GNU General Public License for more details.
+//
+// You should have received a copy of the GNU General Public License
+// along with Moodle.  If not, see <http://www.gnu.org/licenses/>.
+
+
 /**
  * This page prints a particular instance of scollaboration
  *
@@ -17,34 +33,37 @@ $a  = optional_param('a', 0, PARAM_INT);  // scollaboration instance ID
 
 if ($id) {
     if (! $cm = get_coursemodule_from_id('scollaboration', $id)) {
-        error('Course Module ID was incorrect');
+        print_error('invalidcoursemodule');
     }
 
-    if (! $course = get_record('course', 'id', $cm->course)) {
-        error('Course is misconfigured');
+    if (! $course = $DB->get_record('course',array('id' => $cm->course))) {
+        print_error('coursemisconf');
     }
 
-    if (! $scollaboration = get_record('scollaboration', 'id', $cm->instance)) {
-        error('Course module is incorrect');
+    if (! $scollaboration = $DB->get_record('scollaboration',array('id' => $cm->instance))) {
+        print_error('invalidcoursemodule');
     }
 
 } else if ($a) {
-    if (! $scollaboration = get_record('scollaboration', 'id', $a)) {
-        error('Course module is incorrect');
+    if (! $scollaboration = $DB->get_record('scollaboration',array('id' => $a))) {
+        print_error('invalidcoursemodule');
     }
-    if (! $course = get_record('course', 'id', $scollaboration->course)) {
-        error('Course is misconfigured');
+    if (! $course = $DB->get_record('course',array('id' => $scollaboration->course))) {
+        print_error('coursemisconf');
     }
     if (! $cm = get_coursemodule_from_instance('scollaboration', $scollaboration->id, $course->id)) {
-        error('Course Module ID was incorrect');
+        print_error('invalidcoursemodule');
     }
 
 } else {
-    error('You must specify a course_module ID or an instance ID');
+    print_error('missingparameter');
 }
 
 require_course_login($course, true, $cm);
 $context = get_context_instance(CONTEXT_MODULE, $cm->id);
+
+$PAGE->set_context($context);
+$PAGE->set_url($CFG->wwwroot.'/mod/scollaboration/view.php?id='.$cm->id);
 
 add_to_log($course->id, "scollaboration", "view", "view.php?id=$cm->id", "$scollaboration->id");
 
@@ -54,18 +73,15 @@ add_to_log($course->id, "scollaboration", "view", "view.php?id=$cm->id", "$scoll
 $strscollaborations = get_string('modulenameplural', 'scollaboration');
 $strscollaboration  = get_string('modulename', 'scollaboration');
 
-$navlinks = array();
-$navlinks[] = array('name' => $strscollaborations, 'link' => "index.php?id=$course->id", 'type' => 'activity');
-$navlinks[] = array('name' => format_string($scollaboration->name), 'link' => '', 'type' => 'activityinstance');
 
-$navigation = build_navigation($navlinks);
+$PAGE->navbar->add($strscollaborations);
+$PAGE->set_title(format_string($scollaboration->name));
+$PAGE->set_heading(format_string($course->fullname));
 
-
-print_header_simple(format_string($scollaboration->name), '', $navigation, '', '', true,
-update_module_button($cm->id, $course->id, $strscollaboration), navmenu($course, $cm));
+echo $OUTPUT->header();
 
 /// Print the main part of the page
-print_container_start();
+echo $OUTPUT->container_start();
 
 $groupmode    = groups_get_activity_groupmode($cm);
 $currentgroup = groups_get_activity_group($cm);     
@@ -78,20 +94,19 @@ if(!$groupmode || !$currentgroup)
 
 if (has_capability('mod/scollaboration:collaborate',$context)) {
     /// Print the main part of the page
-    print_box_start('generalbox', 'enterlink');
+    echo $OUTPUT->box_start('generalbox', 'enterlink');
     
-    print_heading(format_string($scollaboration->name));    
+    echo $OUTPUT->heading(format_string($scollaboration->name));    
     
     $timenow = time();
     
     if($timenow > $scollaboration->scollaborationtime){ 
         // For a single Simple Collaboration instance, multiple sessions are posible
         if( $sessionid = scollaboration_sessionid($scollaboration, $currentgroup)){        
-            $sessionurl = "/mod/scollaboration/session.php?id=$sessionid&amp;groupid=$currentgroup";
+            $sessionurl = "$CFG->wwwroot/mod/scollaboration/session.php?id=$sessionid&groupid=$currentgroup";
         
             echo '<p>';
-            link_to_popup_window ($sessionurl,
-                    "session{$course->id}{$scollaboration->id}$currentgroup", get_string('entersession', 'scollaboration'), 800, 600, get_string('modulename', 'scollaboration'));
+            echo html_writer::link($sessionurl,  get_string('entersession', 'scollaboration'), array('target'=>'_blank'));            
             echo '</p>';
         }
         else{
@@ -107,18 +122,18 @@ if (has_capability('mod/scollaboration:collaborate',$context)) {
     
     // TODO, View old sessions
 
-    print_box_end();
+    echo $OUTPUT->box_end();
 
 } else {
-    print_box_start('generalbox', 'notallowenter');
+    echo $OUTPUT->box_start('generalbox', 'notallowenter');
     echo '<p>'.get_string('notallowenter', 'chat').'</p>';
-    print_box_end();
+    echo $OUTPUT->box_end();
 }
 
 
-print_container_end();
+echo $OUTPUT->container_end();
 
 /// Finish the page
-print_footer($course);
+echo $OUTPUT->footer();
 
 ?>

@@ -14,23 +14,15 @@ require_once(dirname(__FILE__).'/lib.php');
 
 $id = required_param('id', PARAM_INT); // session ID
 
-if (! $session = get_record('scollaboration_sessions', 'id', $id)) {
-    error('Session ID was incorrect');
-}
+$session = $DB->get_record('scollaboration_sessions',array('id' =>  $id), '*', MUST_EXIST);
 
 if($session->completed){
-    error('Session completed');
+    print_error('sessioncompleted','mod_scollaboration');
 }
 
-if (! $scollaboration = get_record('scollaboration', 'id', $session->scid)) {
-    error('Collaboration ID was incorrect');
-}
-if (! $course = get_record('course', 'id', $scollaboration->course)) {
-    error('Course is misconfigured');
-}
-if (! $cm = get_coursemodule_from_instance('scollaboration', $scollaboration->id, $course->id)) {
-    error('Course Module ID was incorrect');
-}
+$scollaboration = $DB->get_record('scollaboration',array('id' =>  $session->scid), '*', MUST_EXIST);
+$course = $DB->get_record('course',array('id' => $scollaboration->course),'*', MUST_EXIST);
+$cm = get_coursemodule_from_instance('scollaboration', $scollaboration->id, $course->id);
 
 require_course_login($course, true, $cm);
 
@@ -44,7 +36,7 @@ if(! $groupmode = groups_get_activity_groupmode($cm))
     $groupid = 0;
 
 if($groupid && ! groups_is_member($groupid)){
-    error('User is not member of the group selected');
+    print_error('usertnotgroupmember','mod_scollaboration');
 }
 
 $moderator = has_capability('mod/scollaboration:moderate',$context);
@@ -58,13 +50,6 @@ if(preg_match('/MSIE/i',$_SERVER['HTTP_USER_AGENT']) && ! preg_match('/MSIE 9/i'
     $obsoleteie = true;
 }    
 
-// As the plugin chat does, we dont use print_header or print_header simple (neither print_footer)
-// To avoid problems with Moodle's CSS and javascript we only load YUI css and js files
-
-$yuijsfiles = array('yahoo-dom-event/yahoo-dom-event','container/container_core-min','yahoo/yahoo-min','event/event-min','dom/dom-min','element/element-beta-min','dragdrop/dragdrop-min','resize/resize-min','animation/animation-min','layout/layout-min','tabview/tabview-min','button/button-min','utilities/utilities','container/container','menu/menu-min','treeview/treeview-min','treeview/treeview','menu/menu','connection/connection-min','container/container-min','json/json-min','datasource/datasource-min','get/get-min','dragdrop/dragdrop-min','datatable/datatable-min');
-// TODO: Hopefully, some day, I will find a way to load custom CSS (overriding yui ones)
-$yuicssfiles = array('reset-fonts-grids/reset-fonts-grids','resize/assets/skins/sam/resize','layout/assets/skins/sam/layout','button/assets/skins/sam/button','menu/assets/skins/sam/menu','fonts/fonts-min','tabview/assets/skins/sam/tabview','treeview/assets/skins/sam/treeview','container/assets/skins/sam/container','reset/reset','fonts/fonts','datatable/assets/skins/sam/datatable');
-
 
 ?>
 
@@ -72,7 +57,7 @@ $yuicssfiles = array('reset-fonts-grids/reset-fonts-grids','resize/assets/skins/
 <html> 
 <head> 
 <meta http-equiv="Content-Type" content="text/html; charset=utf-8" /> 
-<title>Full Page Layout - Example</title> 
+<title><?php echo format_string($scollaboration->name); ?></title> 
 <style type="text/css"> 
 /*margin and padding on body element
   can introduce errors in determining
@@ -94,8 +79,8 @@ body {
 
 </style> 
 <?php
-foreach($yuicssfiles as $f)
-    echo '<link rel="stylesheet" type="text/css" href="'.$CFG->wwwroot.'/lib/yui/'.$f.'.css" />';
+
+echo '<link rel="stylesheet" type="text/css" href="'.$CFG->wwwroot.'/mod/scollaboration/yui.css" />';
     
 if($obsoleteie){
     echo '<link rel="stylesheet" type="text/css" href="'.$CFG->wwwroot.'/mod/scollaboration/components/whiteboard/interfaces/default/style.css" />';
@@ -104,8 +89,7 @@ if($obsoleteie){
 ?>
 
 <?php
-foreach($yuijsfiles as $f)
-    echo '<script type="text/javascript" src="'.$CFG->wwwroot.'/lib/yui/'.$f.'.js"></script>';
+echo '<script type="text/javascript" src="'.$CFG->wwwroot.'/mod/scollaboration/yui.js"></script>';
 ?>
 
 <!--[if IE]><script type="text/javascript" src="<?php echo $CFG->wwwroot; ?>/mod/scollaboration/components/whiteboard/excanvas.js"></script><![endif]-->
@@ -129,84 +113,78 @@ foreach($yuijsfiles as $f)
     $plugins = get_list_of_plugins('components','',$CFG->dirroot.'/mod/scollaboration');
     foreach($plugins as $p){
         $jsfile = "/mod/scollaboration/components/$p/functions.js";
-        if(file_exists($CFG->dirroot.$jsfile)){
-            echo '<script type="text/javascript" src="'.$CFG->wwwroot.$jsfile.'"></script>';
+        if(file_exists($CFG->dirroot.$jsfile)){            
+	    echo html_writer::script('', $CFG->wwwroot.$jsfile);
         }
     }
+    $jsfiles = array('js/jquery-1.6.2.min.js','js/jquery-ui-1.8.16.custom.min.js','js/jquery.layout-latest.js','js/jquery.ui.menu.js','js/jquery.ui.menubar.js','components/whiteboard/paintweb.js','js/scollaboration.js','components/session/functions.ajax.js','components/chat/functions.ajax.js','components/whiteboard/functions.ajax.js');
+    foreach($jsfiles as $lib){
+	echo html_writer::script('', $CFG->wwwroot.'/mod/scollaboration/'.$lib);
+    }
 ?>
-<script type="text/javascript" src="<?php echo $CFG->wwwroot; ?>/mod/scollaboration/components/whiteboard/paintweb.js"></script>
-<script type="text/javascript" src="<?php echo $CFG->wwwroot; ?>/mod/scollaboration/scollaboration.js"></script>
-
-<script type="text/javascript" src="<?php echo $CFG->wwwroot; ?>/mod/scollaboration/components/session/functions.ajax.js"></script>
-<script type="text/javascript" src="<?php echo $CFG->wwwroot; ?>/mod/scollaboration/components/chat/functions.ajax.js"></script>
-<script type="text/javascript" src="<?php echo $CFG->wwwroot; ?>/mod/scollaboration/components/whiteboard/functions.ajax.js"></script>
 
 <link rel="stylesheet" type="text/css" href="<?php echo $CFG->wwwroot; ?>/mod/scollaboration/session.css" />
-
+<link rel="stylesheet" type="text/css" href="<?php echo $CFG->wwwroot; ?>/mod/scollaboration/theme/lightness/main.css" />
 </head> 
  
 <body id="mod-scollaboration-session" class=" yui-skin-sam"> 
 
-<div id="tooltabs">
+<div id="scmenubar" class="ui-layout-north">
+    
 </div>
 
-<div id="userlistlayer">
-    <div id="useroptions">
-        <div id="useractions">
-            <!-- menu buttom -->
-            <input type="submit" id="menubuttonua" name="menubuttonua_name" value="Actions">
-            <select id="menubuttonuaselect" name="menubuttonuaselect">
-                <option value="0">Raise Hand</option>
-                <option value="1">Status: Away</option>
-                <option value="2">Status: :)</option>
-                <option value="3">Status: :(</option>
-                <option value="4">Status: :S</option>
-            </select>
-        
-        </div>
-        <div id="userpollbuttom">
-            <input type="button" id="userpollok" name="pollok" value=""> 
-            <input type="button" id="userpollnot" name="pollnot" value=""> 
-        </div>
-    </div>
-    <div id="userstable">
-    </div>
-</div>
-
-<div id="chatlayer">
-    <div id="chatlist">
-    </div>
-    <div id="textarealayer">
-        <div id="chattextarea">
-        <input type="text" id="chattextid" name="chattext">
-        </div>
-        <div id="chatsend">
-            <input type="button" id="chatsendb" name="chatsendb" value="Send"> 
-        </div>
-    </div>
-</div>
-
-<div id="tooltabslayer" class="yui-navset">
+<div id="blockssection" class="ui-layout-west">
+    	
+	<div class="ui-layout-north">
+	    <div id="userlistlayer">
+		<div id="useroptions">		    
+		</div>
+		<div id="userstable">
+		</div>
+	    </div>
+	</div>
+	    
+	<div class="ui-layout-center">
+	    <div id="chatlayer">
+		<div id="chatlist">
+		</div>
+		<div id="textarealayer">
+		    <div id="chattextarea">
+		    <input type="text" id="chattextid" name="chattext">
+		    </div>
+		    <div id="chatsend">
+			<input type="button" id="chatsendb" name="chatsendb" value="Send"> 
+		    </div>
+		</div>
+	    </div>
+	</div>
+	
+	<div class="ui-layout-south">
+	    <div id="tooltabslayer">
+	    
+	    </div>
+	</div>
 
 </div>
 
-<div id="whiteboardlayer"> 
-            <!-- Whiteboard area -->
-<?php
-    if($obsoleteie){
-        include_once('obsoletewb.html');
-    }
-    else{
-?>    
-            <div id="PaintWebTarget"> 
-            
-            </div>
-<?php
-    }
-?>            
-            <!--<img id="editableImage" src="components/whiteboard/freshalicious.jpg" alt="Freshalicious">-->
-            <img id="editableImage" src="components/whiteboard/defaultimage.php" alt="Freshalicious">           
-</div> 
+<div class="ui-layout-center">
+    <div id="whiteboardlayer"> 
+		<!-- Whiteboard area -->
+    <?php
+	if($obsoleteie){
+	    include_once('obsoletewb.html');
+	}
+	else{
+    ?>    
+	    <div id="PaintWebTarget">	
+	    </div>
+    <?php
+	}
+    ?>            
+		<!--<img id="editableImage" src="components/whiteboard/freshalicious.jpg" alt="Freshalicious">-->
+		<img id="editableImage" src="components/whiteboard/defaultimage.php" alt="Freshalicious">           
+    </div> 
+</div>
 
 </body> 
-</html> 
+</html>

@@ -9,3 +9,7 @@ SC.components.chat.net.sendChatMessage = function(msg){
         };
         var transaction = YAHOO.util.Connect.asyncRequest('GET', 'requests.php?id='+SCMoodle.SESSION_ID+'&sesskey='+SCMoodle.SESSKEY+'&component=chat&message='+msg, callback, '');
     };
+
+SC.components.chat.net.changePermissions = function(userid, canchat){
+        var transaction = YAHOO.util.Connect.asyncRequest('GET', 'requests.php?id='+SCMoodle.SESSION_ID+'&sesskey='+SCMoodle.SESSKEY+'&component=chat&canchat='+canchat+'&puserid='+userid, null, '');
+}

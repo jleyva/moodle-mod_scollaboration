@@ -1,20 +1,22 @@
-<?php  // $Id: lib.php,v 1.7.2.5 2009/04/22 21:30:57 skodak Exp $
+<?php 
 
-/**
- * Library of functions and constants for module scollaboration
- * This file should have two well differenced parts:
- *   - All the core Moodle functions, neeeded to allow
- *     the module to work integrated in Moodle.
- *   - All the scollaboration specific functions, needed
- *     to implement all the module logic. Please, note
- *     that, if the module become complex and this lib
- *     grows a lot, it's HIGHLY recommended to move all
- *     these module specific functions to a new php file,
- *     called "locallib.php" (see forum, quiz...). This will
- *     help to save some memory when Moodle is performing
- *     actions across all modules.
- */
+// This file is part of Moodle - http://moodle.org/
+//
+// Moodle is free software: you can redistribute it and/or modify
+// it under the terms of the GNU General Public License as published by
+// the Free Software Foundation, either version 3 of the License, or
+// (at your option) any later version.
+//
+// Moodle is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+// GNU General Public License for more details.
+//
+// You should have received a copy of the GNU General Public License
+// along with Moodle.  If not, see <http://www.gnu.org/licenses/>.
 
+
+defined('MOODLE_INTERNAL') || die();
 
 /**
  * Given an object containing all the necessary data,
@@ -26,12 +28,12 @@
  * @return int The id of the newly inserted scollaboration record
  */
 function scollaboration_add_instance($scollaboration) {
+    global $DB;
 
     $scollaboration->timemodified = time();
 
-    # You may have to add extra stuff in here #
-
-    if($returnid = insert_record('scollaboration', $scollaboration)){
+    
+    if($returnid = $DB->insert_record('scollaboration', $scollaboration)){
     
         $event = NULL;
         $event->name        = $scollaboration->name;
@@ -60,20 +62,18 @@ function scollaboration_add_instance($scollaboration) {
  * @return boolean Success/Fail
  */
 function scollaboration_update_instance($scollaboration) {
+    global $DB;
 
     $scollaboration->timemodified = time();
     $scollaboration->id = $scollaboration->instance;
 
-    if ($returnid = update_record("scollaboration", $scollaboration)) {
+    if ($returnid = $DB->update_record("scollaboration", $scollaboration)) {
 
         $event = new object();
-
-        if ($event->id = get_field('event', 'id', 'modulename', 'scollaboration', 'instance', $scollaboration->id)) {
-
+        if ($event->id = $DB->get_field('event', 'id',array('modulename' =>  'scollaboration', 'instance' =>  $scollaboration->id))){
             $event->name        = $scollaboration->name;
             $event->description = $scollaboration->intro;
             $event->timestart   = $scollaboration->scollaborationtime;
-
             update_event($event);
         }
     }
@@ -91,8 +91,9 @@ function scollaboration_update_instance($scollaboration) {
  * @return boolean Success/Failure
  */
 function scollaboration_delete_instance($id) {
+    global $DB;
 
-    if (! $scollaboration = get_record('scollaboration', 'id', $id)) {
+    if (! $scollaboration = $DB->get_record('scollaboration',array('id' =>  $id))) {
         return false;
     }
 
@@ -100,7 +101,7 @@ function scollaboration_delete_instance($id) {
 
     # Delete any dependent records here #
 
-    if (! delete_records('scollaboration', 'id', $scollaboration->id)) {
+    if (! $DB->delete_records('scollaboration', array('id' => $scollaboration->id))) {
         $result = false;
     }
 
@@ -119,7 +120,7 @@ function scollaboration_delete_instance($id) {
  * @todo Finish documenting this function
  */
 function scollaboration_user_outline($course, $user, $mod, $scollaboration) {
-    return $return;
+    return null;
 }
 
 
@@ -171,7 +172,7 @@ function scollaboration_cron () {
  * @return mixed boolean/array of students
  */
 function scollaboration_get_participants($scollaborationid) {
-    return false;
+    return null;
 }
 
 
@@ -188,7 +189,7 @@ function scollaboration_get_participants($scollaborationid) {
 function scollaboration_scale_used($scollaborationid, $scaleid) {
     $return = false;
 
-    //$rec = get_record("scollaboration","id","$scollaborationid","scale","-$scaleid");
+    //$rec = $DB->get_record("scollaboration",array("id" => "$scollaborationid","scale" => "-$scaleid"));
     //
     //if (!empty($rec) && !empty($scaleid)) {
     //    $return = true;
@@ -243,8 +244,10 @@ function scollaboration_uninstall() {
 
 // For a single Simple Collaboration instance, multiple sessions are posible
 function scollaboration_sessionid($scollaboration, $groupid){
+    global $DB;
+    
     $timenow = time();
-    $session = get_record('scollaboration_sessions','scid', $scollaboration->id, 'timestart', $scollaboration->scollaborationtime,'groupid',$groupid);
+    $session = $DB->get_record('scollaboration_sessions',array('scid' =>  $scollaboration->id, 'timestart' =>  $scollaboration->scollaborationtime,'groupid' => $groupid));
     if($session){
         if($session->completed)
             return 0;
@@ -255,8 +258,8 @@ function scollaboration_sessionid($scollaboration, $groupid){
         $session->scid = $scollaboration->id;
         $session->completed = 0;
         $session->timestart = $scollaboration->scollaborationtime;
-        $session->$groupid = $groupid;
-        return insert_record('scollaboration_sessions',$session);
+        $session->groupid = $groupid;
+        return $DB->insert_record('scollaboration_sessions',$session);
     }
 }
 
@@ -269,4 +272,22 @@ function scollaboration_json_error($errormessage, $langfile = true){
     die;
 }
 
-?>
+function scollaboration_user_nick($usernameformat, $user = null){
+    global $USER;
+    
+    if(!$user)
+        $user = $USER;
+
+    switch($usernameformat){
+        case 'fullname': $username = fullname($user);
+                        break;
+        case 'firstname': $username = $user->firstname;
+                        break;
+        case 'lastname': $username = $user->lastname;
+                        break;     
+        case 'idnumber': $username = $user->idnumber;
+                        break;                                     
+        default: $username = $user->username;
+    }
+    return $username;
+}

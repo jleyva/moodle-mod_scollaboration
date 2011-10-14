@@ -9,7 +9,7 @@
  * @package mod/scollaboration
  */
 
-$module->version  = 2010081400;  // The current module version (Date: YYYYMMDDXX)
+$module->version  = 2011091500;  // The current module version (Date: YYYYMMDDXX)
+$module->requires = 2010111002;
 $module->cron     = 0;           // Period for cron to check this module (secs)
 
-?>
